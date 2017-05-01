@@ -2,9 +2,8 @@ import numpy as np
 from PIL import ImageGrab
 import cv2
 import time
-from numpy import ones,vstack
-from numpy.linalg import lstsq
-from statistics import mean
+import pyautogui
+
 
 def draw_lines(img, lines):
     try:
@@ -33,26 +32,39 @@ def process_img(original_image):
     lines = cv2.HoughLinesP(processed_img, 1, np.pi/180, 180, np.array([]), 20, 15)
     draw_lines(processed_img,lines)
     return processed_img
+
+def haar_cascade(gray,img):
+    drone_cascade = cv2.CascadeClassifier('dronecascade4.xml')
+    warrior_cascade = cv2.CascadeClassifier('warriorcascade3.xml')
+  #  gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
+    drones = drone_cascade.detectMultiScale(gray, 50, 50)
+    warrior = warrior_cascade.detectMultiScale(gray,50,50)
+
+    for (x,y,w,h) in drones:
+        cv2.rectangle(img,(x,y),(x+w,y+h),(255,255,0),2)
+        
+        roi_gray = gray[y:y+h, x:x+w]
+        roi_color = img[y:y+h, x:x+w]
+
+    for (x,y,w,h) in warrior:
+        cv2.rectangle(img,(x,y),(x+w,y+h),(255,255,0),2)
+        
+        roi_gray = gray[y:y+h, x:x+w]
+        roi_color = img[y:y+h, x:x+w]
+        
+
 def main():
     last_time = time.time()
     while(True):
         screen =  np.array(ImageGrab.grab(bbox=(0,40, 800, 640)))
         new_screen = process_img(screen)
-        
-        fgbg = cv2.createBackgroundSubtractorMOG2()
-        fgmask = fgbg.apply(new_screen)
-        cv2.line(screen,(20,170),(320,170),(175,175,0),1)
-        contours, hierarchy = cv2.findContours(fgmask,
-cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
-
-        
+        haar_screen = haar_cascade(new_screen,screen)
         print('Loop took {} seconds'.format(time.time()-last_time))
         last_time = time.time()
         cv2.imshow('window', new_screen)
-        cv2.imshow('window2', fgmask)
+        cv2.imshow('sorted', screen)
         if cv2.waitKey(25) & 0xFF == ord('q'):
             cv2.destroyAllWindows()
             break
-
 main()
