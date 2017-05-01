@@ -1,0 +1,6 @@
+neg/0.bmp
+neg/1.bmp
+neg/2.bmp
+neg/3.bmp
+neg/4.bmp
+neg/5.bmp
