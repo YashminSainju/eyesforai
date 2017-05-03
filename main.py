@@ -4,6 +4,7 @@ import cv2
 import time
 import pyautogui
 
+fgbg = cv2.createBackgroundSubtractorMOG2()
 
 def draw_lines(img, lines):
     try:
@@ -33,37 +34,46 @@ def process_img(original_image):
     draw_lines(processed_img,lines)
     return processed_img
 
+def bg_extract(original_image):
+    fgmask = fgbg.apply(original_image)
+    return fgmask
+
 def haar_cascade(gray,img):
     drone_cascade = cv2.CascadeClassifier('dronecascade4.xml')
     warrior_cascade = cv2.CascadeClassifier('warriorcascade3.xml')
-  #  gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     drones = drone_cascade.detectMultiScale(gray, 50, 50)
     warrior = warrior_cascade.detectMultiScale(gray,50,50)
 
     for (x,y,w,h) in drones:
         cv2.rectangle(img,(x,y),(x+w,y+h),(255,255,0),2)
+        font  = cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(img, 'Drone',(x-w,y-h),font,0.5,(11,255,255),2,cv2.LINE_AA)
         
-        roi_gray = gray[y:y+h, x:x+w]
-        roi_color = img[y:y+h, x:x+w]
+        #roi_gray = gray[y:y+h, x:x+w]
+        #roi_color = img[y:y+h, x:x+w]
 
     for (x,y,w,h) in warrior:
         cv2.rectangle(img,(x,y),(x+w,y+h),(255,255,0),2)
-        
-        roi_gray = gray[y:y+h, x:x+w]
-        roi_color = img[y:y+h, x:x+w]
+        font  = cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(img, 'Drone',(x-w,y-h),font,0.5,(11,255,255),2,cv2.LINE_AA)#
+        #roi_gray = gray[y:y+h, x:x+w]
+        #roi_color = img[y:y+h, x:x+w]
         
 
 def main():
     last_time = time.time()
     while(True):
         screen =  np.array(ImageGrab.grab(bbox=(0,40, 800, 640)))
+        screen = cv2.cvtColor(screen,cv2.COLOR_BGR2RGB)
         new_screen = process_img(screen)
         haar_screen = haar_cascade(new_screen,screen)
-        print('Loop took {} seconds'.format(time.time()-last_time))
+        bg_screen = bg_extract(new_screen)
+        #print('Loop took {} seconds'.format(time.time()-last_time))
         last_time = time.time()
         cv2.imshow('window', new_screen)
         cv2.imshow('sorted', screen)
+        cv2.imshow('background extraction', bg_screen)
         if cv2.waitKey(25) & 0xFF == ord('q'):
             cv2.destroyAllWindows()
             break
